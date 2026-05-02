@@ -169,7 +169,7 @@
             width: 100%;
             background: rgba(0, 0, 0, 0.75);
             border-top: 1px solid rgba(0, 100, 255, 0.35);
-            padding: 8px 16px;
+            padding: 6px clamp(6px, 2vw, 16px);
             justify-content: space-between;
             align-items: center;
             flex-shrink: 0;
@@ -181,18 +181,18 @@
 
         .ctrl-group {
             display: flex;
-            gap: 10px;
+            gap: clamp(4px, 1.5vw, 10px);
             align-items: center;
         }
 
         .mobile-btn {
-            width: 76px;
-            height: 76px;
+            width: clamp(50px, 16vw, 76px);
+            height: clamp(50px, 16vw, 76px);
             background: rgba(10, 20, 50, 0.85);
             border: 2px solid rgba(0, 100, 255, 0.55);
             border-radius: 14px;
             color: #55aaff;
-            font-size: 26px;
+            font-size: clamp(16px, 4.5vw, 26px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -213,11 +213,11 @@
         }
 
         .mobile-btn-jump {
-            width: 84px;
-            height: 84px;
+            width: clamp(56px, 18vw, 84px);
+            height: clamp(56px, 18vw, 84px);
             background: rgba(0, 50, 130, 0.85);
             border-color: rgba(0, 160, 255, 0.7);
-            font-size: 13px;
+            font-size: clamp(10px, 2.5vw, 13px);
             font-family: 'Courier New', monospace;
             font-weight: bold;
             letter-spacing: 1px;
@@ -250,8 +250,8 @@
         }
 
         .mobile-btn-pause {
-            width: 50px;
-            height: 50px;
+            width: clamp(36px, 10vw, 50px);
+            height: clamp(36px, 10vw, 50px);
             background: rgba(20, 20, 20, 0.85);
             border-color: rgba(100, 100, 100, 0.5);
             color: #888;
@@ -464,6 +464,17 @@
         const scaledH = Math.round(CONFIG.HEIGHT * clampedScale);
         wrapper.style.marginBottom = (scaledH - CONFIG.HEIGHT) + 'px';
 
+        // Vertically center the game+controls stack without relying on flex centering
+        // (flex centering fights with the negative marginBottom)
+        if (isTouchDevice) {
+            const totalVisualH = scaledH + controlsH;
+            const topPad = Math.max(0, Math.floor((window.innerHeight - totalVisualH) / 2));
+            gameArea.style.paddingTop = topPad + 'px';
+            gameArea.style.justifyContent = 'flex-start';
+        } else {
+            gameArea.style.paddingTop = '0';
+            gameArea.style.justifyContent = 'center';
+        }
         gameArea.style.height = '100%';
     }
 
