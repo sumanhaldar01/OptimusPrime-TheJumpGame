@@ -423,10 +423,10 @@
     canvas.height = CONFIG.HEIGHT;
 
     // ============================================
-    // RESPONSIVE SCALING
+    // RESPONSIVE SCALING — FIXED
     // ============================================
     function resizeGame() {
-        const wrapper = document.getElementById('gameWrapper');
+        const wrapper  = document.getElementById('gameWrapper');
         const controls = document.getElementById('mobileControls');
         const gameArea = document.getElementById('gameArea');
 
@@ -434,34 +434,36 @@
 
         if (isTouchDevice) {
             controls.style.display = 'flex';
-            // Hide keyboard hint on touch devices
             const hint = document.getElementById('keyboardHint');
             if (hint) hint.style.display = 'none';
         }
 
-        // Measure available space (account for mobile controls bar)
-        const controlsH = isTouchDevice ? (controls.offsetHeight || 100) : 0;
-        const borderSize = 8; // 4px border * 2
+        // Read controls height AFTER it is made visible
+        const controlsH = isTouchDevice ? (controls.getBoundingClientRect().height || 100) : 0;
+        const borderSize = 8; // 4px border × 2
 
-        const availW = window.innerWidth - borderSize;
+        const availW = window.innerWidth  - borderSize;
         const availH = window.innerHeight - controlsH - borderSize;
 
-        const scaleX = availW / CONFIG.WIDTH;
-        const scaleY = availH / CONFIG.HEIGHT;
-        const scale = Math.min(scaleX, scaleY); // scale down to fit; never scale up past 1 on big screens
+        const scale        = Math.min(availW / CONFIG.WIDTH, availH / CONFIG.HEIGHT);
         const clampedScale = Math.min(scale, 1.0);
 
-        wrapper.style.transform = `scale(${clampedScale})`;
+        // Keep DOM dimensions at the original canvas size
+        wrapper.style.width          = CONFIG.WIDTH  + 'px';
+        wrapper.style.height         = CONFIG.HEIGHT + 'px';
         wrapper.style.transformOrigin = 'top center';
+        wrapper.style.transform      = `scale(${clampedScale})`;
 
-        // Reserve space for scaled wrapper so flexbox centers it
-        wrapper.style.width = CONFIG.WIDTH + 'px';
-        wrapper.style.height = CONFIG.HEIGHT + 'px';
+        // KEY FIX ─────────────────────────────────────────────────────────────
+        // transform:scale() shrinks the element visually but it still occupies
+        // its original height (480 px) in the DOM, producing a huge black gap
+        // between the game and the controls bar.
+        // A negative marginBottom equal to the difference collapses that gap
+        // so the controls sit flush under the visible game area.
+        // ─────────────────────────────────────────────────────────────────────
+        const scaledH = Math.round(CONFIG.HEIGHT * clampedScale);
+        wrapper.style.marginBottom = (scaledH - CONFIG.HEIGHT) + 'px';
 
-        // Total height of scaled game + controls must fit viewport
-        // Adjust gameArea to use column layout naturally
-        const scaledH = Math.round(CONFIG.HEIGHT * clampedScale + borderSize);
-        gameArea.style.paddingBottom = '0';
         gameArea.style.height = '100%';
     }
 
@@ -835,9 +837,6 @@
     // Mobile state
     const mobileState = { left: false, right: false, jump: false, shoot: false };
 
-    // Track active touches per button for multi-touch support
-    const activeTouches = {};
-
     function setupMobileBtn(id, stateKey) {
         const btn = document.getElementById(id);
         if (!btn) return;
@@ -864,13 +863,11 @@
     setupMobileBtn('btnJump',  'jump');
     setupMobileBtn('btnShoot', 'shoot');
 
-    // Pause button on mobile
     const btnPause = document.getElementById('btnPause');
     if (btnPause) {
         const triggerPause = (e) => {
             e.preventDefault();
             if (gameState === 'playing') {
-                // Simulate pressing P
                 keysJustPressed['KeyP'] = true;
             } else if (gameState === 'paused') {
                 resumeGame();
@@ -881,7 +878,7 @@
     }
 
     // ============================================
-    // ENTITY CLASSES (unchanged)
+    // ENTITY CLASSES
     // ============================================
     class Player {
         constructor() { this.reset(); }
@@ -1927,7 +1924,7 @@
     // ============================================
     renderMenuBackground();
 
-    // Run resize after layout is settled
+    // Run resize after layout is settled, then kick off the game loop
     requestAnimationFrame(() => {
         resizeGame();
         requestAnimationFrame(gameLoop);
