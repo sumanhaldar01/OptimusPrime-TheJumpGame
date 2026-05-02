@@ -2,23 +2,41 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <title>Optimus Prime - The Jump Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0a0a;
+            touch-action: none;
         }
 
         body {
-            background: #0a0a0a;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
             font-family: 'Courier New', monospace;
-            overflow: hidden;
+        }
+
+        #gameArea {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
         }
 
         #gameWrapper {
@@ -26,6 +44,8 @@
             border: 4px solid #333;
             border-radius: 4px;
             box-shadow: 0 0 30px rgba(0, 100, 255, 0.3), inset 0 0 30px rgba(0, 0, 0, 0.5);
+            transform-origin: top center;
+            flex-shrink: 0;
         }
 
         canvas {
@@ -141,61 +161,102 @@
             margin: 0 2px;
         }
 
+        /* =============================================
+           MOBILE CONTROLS — outside canvas, fixed bar
+           ============================================= */
         #mobileControls {
-            display: none;
-            position: absolute;
-            bottom: 10px;
-            left: 0;
+            display: none; /* JS shows this on touch devices */
             width: 100%;
+            background: rgba(0, 0, 0, 0.75);
+            border-top: 1px solid rgba(0, 100, 255, 0.35);
+            padding: 8px 16px;
             justify-content: space-between;
-            padding: 0 10px;
-            pointer-events: all;
-            z-index: 5;
+            align-items: center;
+            flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            z-index: 100;
+        }
+
+        .ctrl-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
         }
 
         .mobile-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(0, 100, 255, 0.2);
-            border: 2px solid rgba(0, 100, 255, 0.5);
-            border-radius: 50%;
-            color: #00aaff;
-            font-size: 24px;
+            width: 76px;
+            height: 76px;
+            background: rgba(10, 20, 50, 0.85);
+            border: 2px solid rgba(0, 100, 255, 0.55);
+            border-radius: 14px;
+            color: #55aaff;
+            font-size: 26px;
             display: flex;
             justify-content: center;
             align-items: center;
             user-select: none;
             -webkit-user-select: none;
             touch-action: manipulation;
+            transition: background 0.08s, border-color 0.08s, transform 0.05s;
+            cursor: pointer;
+            box-shadow: 0 0 8px rgba(0, 80, 200, 0.3), inset 0 1px 0 rgba(255,255,255,0.07);
         }
 
+        .mobile-btn.pressed,
         .mobile-btn:active {
-            background: rgba(0, 100, 255, 0.5);
+            background: rgba(0, 80, 220, 0.55);
+            border-color: #00aaff;
+            box-shadow: 0 0 18px rgba(0, 150, 255, 0.6);
+            transform: scale(0.93);
         }
 
-        .dpad {
-            display: flex;
-            gap: 5px;
+        .mobile-btn-jump {
+            width: 84px;
+            height: 84px;
+            background: rgba(0, 50, 130, 0.85);
+            border-color: rgba(0, 160, 255, 0.7);
+            font-size: 13px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #aaddff;
+            flex-direction: column;
+            gap: 2px;
         }
 
-        @media (max-width: 768px) {
-            #mobileControls {
-                display: flex;
-            }
+        .mobile-btn-jump .btn-icon { font-size: 24px; }
+        .mobile-btn-jump .btn-label { font-size: 10px; letter-spacing: 1px; }
+
+        .mobile-btn-jump.pressed,
+        .mobile-btn-jump:active {
+            background: rgba(0, 120, 255, 0.65);
+            border-color: #44ddff;
+            box-shadow: 0 0 22px rgba(0, 180, 255, 0.7);
         }
 
-        .score-display {
-            color: #ffaa00;
-            font-size: 14px;
-            margin: 5px 0;
+        .mobile-btn-shoot {
+            background: rgba(80, 10, 10, 0.85);
+            border-color: rgba(200, 40, 40, 0.65);
+            color: #ff7755;
         }
 
-        .high-score {
-            color: #ff4444;
+        .mobile-btn-shoot.pressed,
+        .mobile-btn-shoot:active {
+            background: rgba(180, 40, 40, 0.6);
+            border-color: #ff4422;
+            box-shadow: 0 0 18px rgba(255, 80, 40, 0.6);
         }
 
-        .last-score {
-            color: #88aacc;
+        .mobile-btn-pause {
+            width: 50px;
+            height: 50px;
+            background: rgba(20, 20, 20, 0.85);
+            border-color: rgba(100, 100, 100, 0.5);
+            color: #888;
+            font-size: 18px;
+            border-radius: 50%;
         }
 
         .scanlines {
@@ -230,15 +291,8 @@
             line-height: 1.8;
         }
 
-        .score-table .label {
-            color: #667788;
-        }
-
-        .score-table .value {
-            color: #00ccff;
-            float: right;
-            margin-left: 20px;
-        }
+        .score-table .label { color: #667788; }
+        .score-table .value { color: #00ccff; float: right; margin-left: 20px; }
 
         .new-record {
             color: #ffcc00;
@@ -249,68 +303,87 @@
             from { opacity: 1; }
             to { opacity: 0.3; }
         }
+
+        .score-display { color: #ffaa00; font-size: 14px; margin: 5px 0; }
+        .high-score { color: #ff4444; }
+        .last-score { color: #88aacc; }
     </style>
 </head>
 <body>
-    <div id="gameWrapper">
-        <canvas id="gameCanvas"></canvas>
-        <div class="scanlines"></div>
-        <div id="uiOverlay" class="active">
-            <div id="startScreen" class="screen-overlay">
-                <h1>⚡ OPTIMUS PRIME ⚡</h1>
-                <h2>vs THE DECEPTICONS</h2>
-                <div class="subtitle">— CYBERTRON RUNNER —</div>
-                <div class="score-table" id="menuScores">
-                    <div><span class="label">HIGH SCORE:</span><span class="value high-score" id="menuHighScore">00000000</span></div>
-                    <div id="menuLastRow" style="display:none"><span class="label">LAST SCORE:</span><span class="value last-score" id="menuLastScore">00000000</span></div>
+    <div id="gameArea">
+        <div id="gameWrapper">
+            <canvas id="gameCanvas"></canvas>
+            <div class="scanlines"></div>
+            <div id="uiOverlay" class="active">
+                <div id="startScreen" class="screen-overlay">
+                    <h1>⚡ OPTIMUS PRIME ⚡</h1>
+                    <h2>vs THE DECEPTICONS</h2>
+                    <div class="subtitle">— CYBERTRON RUNNER —</div>
+                    <div class="score-table" id="menuScores">
+                        <div><span class="label">HIGH SCORE:</span><span class="value high-score" id="menuHighScore">00000000</span></div>
+                        <div id="menuLastRow" style="display:none"><span class="label">LAST SCORE:</span><span class="value last-score" id="menuLastScore">00000000</span></div>
+                    </div>
+                    <button class="btn" onclick="startGame()">START MISSION</button>
+                    <div class="controls-info" id="keyboardHint">
+                        <span>←</span> <span>→</span> MOVE &nbsp;
+                        <span>SPACE</span> JUMP &nbsp;
+                        <span>X</span> SHOOT<br>
+                        <span>↑</span> JUMP &nbsp;
+                        <span>P</span> PAUSE &nbsp;
+                        <span>ESC</span> END
+                    </div>
                 </div>
-                <button class="btn" onclick="startGame()">START MISSION</button>
-                <div class="controls-info">
-                    <span>←</span> <span>→</span> MOVE &nbsp;
-                    <span>SPACE</span> JUMP &nbsp;
-                    <span>X</span> SHOOT<br>
-                    <span>↑</span> JUMP &nbsp;
-                    <span>P</span> PAUSE &nbsp;
-                    <span>ESC</span> END
+                <div id="gameOverScreen" class="screen-overlay" style="display:none;">
+                    <h1>MISSION FAILED</h1>
+                    <div class="subtitle">THE DECEPTICONS WIN... FOR NOW</div>
+                    <div class="score-table">
+                        <div><span class="label">SCORE:</span><span class="value" id="finalScore">00000000</span></div>
+                        <div><span class="label">HIGH SCORE:</span><span class="value high-score" id="highScoreDisplay">00000000</span></div>
+                        <div><span class="label">WAVE:</span><span class="value" id="waveDisplay">1</span></div>
+                        <div><span class="label">DISTANCE:</span><span class="value" id="distDisplay">0m</span></div>
+                        <div><span class="label">ENEMIES:</span><span class="value" id="killDisplay">0</span></div>
+                    </div>
+                    <div id="newRecordBadge" class="new-record" style="display:none; font-size:18px; margin:8px 0;">★ NEW HIGH SCORE! ★</div>
+                    <div class="btn-row">
+                        <button class="btn" onclick="startGame()">RETRY MISSION</button>
+                        <button class="btn btn-gold" onclick="goToMenu()">MAIN MENU</button>
+                    </div>
                 </div>
-            </div>
-            <div id="gameOverScreen" class="screen-overlay" style="display:none;">
-                <h1>MISSION FAILED</h1>
-                <div class="subtitle">THE DECEPTICONS WIN... FOR NOW</div>
-                <div class="score-table">
-                    <div><span class="label">SCORE:</span><span class="value" id="finalScore">00000000</span></div>
-                    <div><span class="label">HIGH SCORE:</span><span class="value high-score" id="highScoreDisplay">00000000</span></div>
-                    <div><span class="label">WAVE:</span><span class="value" id="waveDisplay">1</span></div>
-                    <div><span class="label">DISTANCE:</span><span class="value" id="distDisplay">0m</span></div>
-                    <div><span class="label">ENEMIES:</span><span class="value" id="killDisplay">0</span></div>
-                </div>
-                <div id="newRecordBadge" class="new-record" style="display:none; font-size:18px; margin:8px 0;">★ NEW HIGH SCORE! ★</div>
-                <div class="btn-row">
-                    <button class="btn" onclick="startGame()">RETRY MISSION</button>
-                    <button class="btn btn-gold" onclick="goToMenu()">MAIN MENU</button>
-                </div>
-            </div>
-            <div id="pauseScreen" class="screen-overlay" style="display:none;">
-                <h1>⏸ PAUSED</h1>
-                <div class="score-table">
-                    <div><span class="label">SCORE:</span><span class="value" id="pauseScore">00000000</span></div>
-                    <div><span class="label">WAVE:</span><span class="value" id="pauseWave">1</span></div>
-                    <div><span class="label">LIVES:</span><span class="value" id="pauseLives">3</span></div>
-                </div>
-                <div class="btn-row">
-                    <button class="btn" onclick="resumeGame()">RESUME</button>
-                    <button class="btn btn-danger" onclick="endGame()">END MISSION</button>
+                <div id="pauseScreen" class="screen-overlay" style="display:none;">
+                    <h1>⏸ PAUSED</h1>
+                    <div class="score-table">
+                        <div><span class="label">SCORE:</span><span class="value" id="pauseScore">00000000</span></div>
+                        <div><span class="label">WAVE:</span><span class="value" id="pauseWave">1</span></div>
+                        <div><span class="label">LIVES:</span><span class="value" id="pauseLives">3</span></div>
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn" onclick="resumeGame()">RESUME</button>
+                        <button class="btn btn-danger" onclick="endGame()">END MISSION</button>
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Mobile controls OUTSIDE the scaled canvas wrapper -->
         <div id="mobileControls">
-            <div class="dpad">
+            <!-- Left: movement -->
+            <div class="ctrl-group">
                 <button class="mobile-btn" id="btnLeft">◀</button>
                 <button class="mobile-btn" id="btnRight">▶</button>
             </div>
-            <div class="dpad">
-                <button class="mobile-btn" id="btnShoot">🔫</button>
-                <button class="mobile-btn" id="btnJump">▲</button>
+
+            <!-- Center: pause -->
+            <div class="ctrl-group">
+                <button class="mobile-btn mobile-btn-pause" id="btnPause">⏸</button>
+            </div>
+
+            <!-- Right: shoot + jump -->
+            <div class="ctrl-group">
+                <button class="mobile-btn mobile-btn-shoot" id="btnShoot">🔫</button>
+                <button class="mobile-btn mobile-btn-jump" id="btnJump">
+                    <span class="btn-icon">▲</span>
+                    <span class="btn-label">JUMP</span>
+                </button>
             </div>
         </div>
     </div>
@@ -348,6 +421,52 @@
     const ctx = canvas.getContext('2d');
     canvas.width = CONFIG.WIDTH;
     canvas.height = CONFIG.HEIGHT;
+
+    // ============================================
+    // RESPONSIVE SCALING
+    // ============================================
+    function resizeGame() {
+        const wrapper = document.getElementById('gameWrapper');
+        const controls = document.getElementById('mobileControls');
+        const gameArea = document.getElementById('gameArea');
+
+        const isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+
+        if (isTouchDevice) {
+            controls.style.display = 'flex';
+            // Hide keyboard hint on touch devices
+            const hint = document.getElementById('keyboardHint');
+            if (hint) hint.style.display = 'none';
+        }
+
+        // Measure available space (account for mobile controls bar)
+        const controlsH = isTouchDevice ? (controls.offsetHeight || 100) : 0;
+        const borderSize = 8; // 4px border * 2
+
+        const availW = window.innerWidth - borderSize;
+        const availH = window.innerHeight - controlsH - borderSize;
+
+        const scaleX = availW / CONFIG.WIDTH;
+        const scaleY = availH / CONFIG.HEIGHT;
+        const scale = Math.min(scaleX, scaleY); // scale down to fit; never scale up past 1 on big screens
+        const clampedScale = Math.min(scale, 1.0);
+
+        wrapper.style.transform = `scale(${clampedScale})`;
+        wrapper.style.transformOrigin = 'top center';
+
+        // Reserve space for scaled wrapper so flexbox centers it
+        wrapper.style.width = CONFIG.WIDTH + 'px';
+        wrapper.style.height = CONFIG.HEIGHT + 'px';
+
+        // Total height of scaled game + controls must fit viewport
+        // Adjust gameArea to use column layout naturally
+        const scaledH = Math.round(CONFIG.HEIGHT * clampedScale + borderSize);
+        gameArea.style.paddingBottom = '0';
+        gameArea.style.height = '100%';
+    }
+
+    window.addEventListener('resize', resizeGame);
+    window.addEventListener('orientationchange', () => setTimeout(resizeGame, 200));
 
     // ============================================
     // PIXEL ART SPRITE GENERATOR
@@ -684,7 +803,6 @@
     let shakeIntensity = 0;
     let pauseJustPressed = false;
 
-    // Show stored scores on menu
     function updateMenuScores() {
         document.getElementById('menuHighScore').textContent = highScore.toString().padStart(8, '0');
         if (lastScore > 0) {
@@ -714,28 +832,56 @@
         keys[e.code] = false;
     });
 
-    // Mobile controls
+    // Mobile state
     const mobileState = { left: false, right: false, jump: false, shoot: false };
+
+    // Track active touches per button for multi-touch support
+    const activeTouches = {};
 
     function setupMobileBtn(id, stateKey) {
         const btn = document.getElementById(id);
         if (!btn) return;
-        const start = (ev) => { ev.preventDefault(); mobileState[stateKey] = true; };
-        const end = (ev) => { ev.preventDefault(); mobileState[stateKey] = false; };
-        btn.addEventListener('touchstart', start, {passive: false});
-        btn.addEventListener('touchend', end, {passive: false});
-        btn.addEventListener('mousedown', start);
-        btn.addEventListener('mouseup', end);
-        btn.addEventListener('mouseleave', end);
+
+        const press = () => {
+            mobileState[stateKey] = true;
+            btn.classList.add('pressed');
+        };
+        const release = () => {
+            mobileState[stateKey] = false;
+            btn.classList.remove('pressed');
+        };
+
+        btn.addEventListener('touchstart', (e) => { e.preventDefault(); press(); }, { passive: false });
+        btn.addEventListener('touchend',   (e) => { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('touchcancel',(e) => { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('mousedown',  (e) => { e.preventDefault(); press(); });
+        btn.addEventListener('mouseup',    (e) => { e.preventDefault(); release(); });
+        btn.addEventListener('mouseleave', (e) => { release(); });
     }
 
-    setupMobileBtn('btnLeft', 'left');
+    setupMobileBtn('btnLeft',  'left');
     setupMobileBtn('btnRight', 'right');
-    setupMobileBtn('btnJump', 'jump');
+    setupMobileBtn('btnJump',  'jump');
     setupMobileBtn('btnShoot', 'shoot');
 
+    // Pause button on mobile
+    const btnPause = document.getElementById('btnPause');
+    if (btnPause) {
+        const triggerPause = (e) => {
+            e.preventDefault();
+            if (gameState === 'playing') {
+                // Simulate pressing P
+                keysJustPressed['KeyP'] = true;
+            } else if (gameState === 'paused') {
+                resumeGame();
+            }
+        };
+        btnPause.addEventListener('touchstart', triggerPause, { passive: false });
+        btnPause.addEventListener('mousedown',  triggerPause);
+    }
+
     // ============================================
-    // ENTITY CLASSES
+    // ENTITY CLASSES (unchanged)
     // ============================================
     class Player {
         constructor() { this.reset(); }
@@ -972,8 +1118,8 @@
             if (this.x <= this.patrolStart) this.direction = 1;
             if (this.x >= this.patrolEnd) this.direction = -1;
 
-            const groundY = CONFIG.HEIGHT - CONFIG.GROUND_HEIGHT - this.h;
-            if (this.y < groundY) this.y = Math.min(this.y + 2, groundY);
+            const groundY = CONFIG.HEIGHT - CONFIG.GROUND_HEIGHT;
+            if (this.y < groundY - this.h) this.y = Math.min(this.y + 2, groundY - this.h);
 
             this.animTimer++;
             if (this.animTimer >= 10) { this.animTimer = 0; this.animFrame = (this.animFrame + 1) % 4; }
@@ -1454,7 +1600,6 @@
         enemySpawnTimer = 60;
         powerupSpawnTimer = CONFIG.POWERUP_SPAWN_RATE;
 
-        // Clear all input state to prevent stale inputs
         Object.keys(keys).forEach(k => keys[k] = false);
         Object.keys(keysJustPressed).forEach(k => delete keysJustPressed[k]);
         mobileState.left = false;
@@ -1478,7 +1623,6 @@
     }
 
     function resumeGame() {
-        // Clear all input state to prevent immediate re-pause or stale inputs
         Object.keys(keys).forEach(k => keys[k] = false);
         Object.keys(keysJustPressed).forEach(k => delete keysJustPressed[k]);
         mobileState.left = false;
@@ -1507,7 +1651,6 @@
     }
 
     function endGame() {
-        // Called when user manually ends the game from pause menu
         const isNewRecord = score > highScore;
         saveScores();
 
@@ -1518,7 +1661,6 @@
     }
 
     function gameOver() {
-        // Called when player dies naturally
         const isNewRecord = score > highScore;
         saveScores();
 
@@ -1535,7 +1677,6 @@
         document.getElementById('startScreen').style.display = 'flex';
         document.getElementById('uiOverlay').classList.add('active');
 
-        // Draw a static background for the menu
         renderMenuBackground();
     }
 
@@ -1557,7 +1698,6 @@
 
         frameCount++;
 
-        // Pause check - use a flag to prevent instant re-trigger
         const pauseKeyDown = keysJustPressed['KeyP'] || keysJustPressed['Escape'];
         if (pauseKeyDown && !pauseJustPressed) {
             pauseJustPressed = true;
@@ -1575,26 +1715,22 @@
             pauseJustPressed = false;
         }
 
-        // Scroll
         scrollSpeed = CONFIG.SCROLL_SPEED + frameCount * CONFIG.SCROLL_ACCELERATION;
         if (scrollSpeed > CONFIG.MAX_SCROLL_SPEED) scrollSpeed = CONFIG.MAX_SCROLL_SPEED;
         cameraX += scrollSpeed;
         distanceTraveled += scrollSpeed * 0.1;
 
-        // Wave
         const newWave = Math.floor(distanceTraveled / 100) + 1;
         if (newWave > wave) {
             wave = newWave;
             floatingTexts.push(new FloatingText(cameraX + CONFIG.WIDTH / 2, CONFIG.HEIGHT / 2 - 50, `WAVE ${wave}`, '#ffcc00'));
         }
 
-        // Generate world
         if (cameraX + CONFIG.WIDTH + 500 > worldGenX) {
             generateWorld(worldGenX, worldGenX + 800);
             worldGenX += 800;
         }
 
-        // Spawn enemies
         enemySpawnTimer--;
         const spawnRate = Math.max(30, CONFIG.ENEMY_SPAWN_RATE - wave * 8);
         if (enemySpawnTimer <= 0 && enemies.filter(e => e.alive).length + flyingEnemies.filter(e => e.alive).length < CONFIG.MAX_ENEMIES) {
@@ -1602,14 +1738,12 @@
             enemySpawnTimer = spawnRate + Math.random() * 40;
         }
 
-        // Spawn powerups
         powerupSpawnTimer--;
         if (powerupSpawnTimer <= 0) {
             spawnPowerup();
             powerupSpawnTimer = CONFIG.POWERUP_SPAWN_RATE + Math.random() * 200;
         }
 
-        // Update player
         const visiblePlatforms = platforms.filter(p => p.x + p.w > cameraX - 50 && p.x < cameraX + CONFIG.WIDTH + 50);
         player.update(visiblePlatforms);
 
@@ -1618,7 +1752,6 @@
         if (player.dead && player.deathTimer > 100) { gameOver(); return; }
         if (!player.dead && player.x < cameraX - 20) player.die();
 
-        // Update all entities
         enemies.forEach(e => e.update());
         flyingEnemies.forEach(e => e.update());
         bullets.forEach(b => b.update());
@@ -1627,7 +1760,6 @@
         floatingTexts.forEach(t => t.update());
         powerups.forEach(p => p.update());
 
-        // ---- COLLISIONS ----
         bullets.forEach(b => {
             if (!b.alive) return;
             [...enemies, ...flyingEnemies].forEach(e => {
@@ -1709,7 +1841,6 @@
 
         if (frameCount % 10 === 0 && !player.dead) score += Math.floor(wave);
 
-        // Cleanup
         enemies = enemies.filter(e => (e.alive && e.x > cameraX - 200) || (!e.alive && e.deathTimer < 30));
         flyingEnemies = flyingEnemies.filter(e => (e.alive && e.x > cameraX - 100) || (!e.alive && e.deathTimer < 30));
         bullets = bullets.filter(b => b.alive);
@@ -1726,7 +1857,7 @@
     // MAIN RENDER
     // ============================================
     function render() {
-        if (gameState === 'menu') return; // Menu draws its own background once
+        if (gameState === 'menu') return;
 
         ctx.clearRect(0, 0, CONFIG.WIDTH, CONFIG.HEIGHT);
 
@@ -1773,7 +1904,6 @@
         let delta = timestamp - lastTime;
         lastTime = timestamp;
 
-        // Clamp delta to prevent spiral of death after pause/tab switch
         if (delta > 200) delta = FIXED_DT;
 
         accumulator += delta;
@@ -1781,25 +1911,29 @@
         let steps = 0;
         while (accumulator >= FIXED_DT && steps < 4) {
             update();
-            // Clear just-pressed after each tick so they only fire once
             Object.keys(keysJustPressed).forEach(k => delete keysJustPressed[k]);
             accumulator -= FIXED_DT;
             steps++;
         }
 
-        // If we hit max steps, discard remaining accumulator to avoid spiral
         if (steps >= 4) accumulator = 0;
 
         render();
         requestAnimationFrame(gameLoop);
     }
 
-    // Draw initial menu background
+    // ============================================
+    // INIT
+    // ============================================
     renderMenuBackground();
 
-    requestAnimationFrame(gameLoop);
+    // Run resize after layout is settled
+    requestAnimationFrame(() => {
+        resizeGame();
+        requestAnimationFrame(gameLoop);
+    });
 
-    // Make functions globally accessible
+    // Global function exports
     window.startGame = startGame;
     window.resumeGame = resumeGame;
     window.endGame = endGame;
